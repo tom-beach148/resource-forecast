@@ -134,6 +134,7 @@
 <body>
     <div id="root"></div>
     
+    {% raw %}
     <script type="text/babel">
         const { useState, useMemo, useEffect, useCallback } = React;
         const { ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } = Recharts;
@@ -142,7 +143,7 @@
         const BUSINESS_UNITS = ['DBU', 'SBU', 'TBU'];
         const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
         const CURRENT_YEAR = 2025;
-        const POLL_INTERVAL = 3000; // 3 seconds
+        const POLL_INTERVAL = 3000;
 
         const BU_COLORS = {
             DBU: '#10b981',
@@ -163,7 +164,6 @@
                 numberOfDays: '', perDiem: '', costRate: ''
             });
 
-            // Fetch associates from API
             const fetchAssociates = useCallback(async (showLoadingState = false) => {
                 if (showLoadingState) setLoading(true);
                 try {
@@ -181,14 +181,11 @@
                 }
             }, []);
 
-            // Initial load and polling
             useEffect(() => {
                 fetchAssociates(true);
-                
                 const interval = setInterval(() => {
                     fetchAssociates(false);
                 }, POLL_INTERVAL);
-
                 return () => clearInterval(interval);
             }, [fetchAssociates]);
 
@@ -201,24 +198,20 @@
             const handleSubmit = async (e) => {
                 e.preventDefault();
                 setSaving(true);
-
                 try {
                     if (editingId) {
-                        // Update existing
-                        await fetch(`/api/associates/${editingId}`, {
+                        await fetch('/api/associates/' + editingId, {
                             method: 'PUT',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(formData)
                         });
                     } else {
-                        // Add new
                         await fetch('/api/associates', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(formData)
                         });
                     }
-                    
                     await fetchAssociates(false);
                     resetForm();
                 } catch (err) {
@@ -245,10 +238,9 @@
 
             const handleDelete = async (id) => {
                 if (!confirm('Are you sure you want to delete this associate?')) return;
-                
                 setSaving(true);
                 try {
-                    await fetch(`/api/associates/${id}`, { method: 'DELETE' });
+                    await fetch('/api/associates/' + id, { method: 'DELETE' });
                     await fetchAssociates(false);
                 } catch (err) {
                     setError('Failed to delete');
@@ -259,7 +251,7 @@
             };
 
             const forecastData = useMemo(() => {
-                const monthlyData = MONTHS.map((month, idx) => {
+                return MONTHS.map((month, idx) => {
                     const monthNum = idx + 1;
                     const monthStart = new Date(CURRENT_YEAR, monthNum - 1, 1);
                     const monthEnd = new Date(CURRENT_YEAR, monthNum, 0);
@@ -307,8 +299,6 @@
                         buBreakdown
                     };
                 });
-
-                return monthlyData;
             }, [associates]);
 
             const totals = useMemo(() => {
@@ -316,7 +306,6 @@
                 const totalCost = forecastData.reduce((sum, m) => sum + m.cost, 0);
                 const totalMargin = totalRevenue - totalCost;
                 const avgMarginPercent = totalRevenue > 0 ? Math.round((totalMargin / totalRevenue) * 100) : 0;
-
                 return { totalRevenue, totalCost, totalMargin, avgMarginPercent };
             }, [forecastData]);
 
@@ -340,15 +329,15 @@
             }, [forecastData]);
 
             const formatCurrency = (val) => {
-                if (val >= 1000000) return `£${(val / 1000000).toFixed(1)}M`;
-                if (val >= 1000) return `£${(val / 1000).toFixed(0)}K`;
-                return `£${val}`;
+                if (val >= 1000000) return '£' + (val / 1000000).toFixed(1) + 'M';
+                if (val >= 1000) return '£' + (val / 1000).toFixed(0) + 'K';
+                return '£' + val;
             };
 
             const statCards = [
                 { label: 'Total Revenue', value: formatCurrency(totals.totalRevenue), icon: TrendingUp, color: '#10b981', sub: '6-month forecast' },
                 { label: 'Total Cost', value: formatCurrency(totals.totalCost), icon: DollarSign, color: '#f59e0b', sub: 'Labour costs' },
-                { label: 'Gross Margin', value: formatCurrency(totals.totalMargin), icon: Percent, color: '#6366f1', sub: `${totals.avgMarginPercent}% margin` },
+                { label: 'Gross Margin', value: formatCurrency(totals.totalMargin), icon: Percent, color: '#6366f1', sub: totals.avgMarginPercent + '% margin' },
                 { label: 'Active Associates', value: associates.length, icon: Users, color: '#ec4899', sub: 'Current headcount' },
             ];
 
@@ -363,17 +352,9 @@
 
             return (
                 <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
-                    {/* Header */}
                     <header style={{ marginBottom: 32, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
                         <div>
-                            <h1 style={{
-                                fontSize: 32,
-                                fontWeight: 700,
-                                margin: 0,
-                                background: 'linear-gradient(135deg, #e2e8f0, #94a3b8)',
-                                WebkitBackgroundClip: 'text',
-                                WebkitTextFillColor: 'transparent'
-                            }}>
+                            <h1 style={{ fontSize: 32, fontWeight: 700, margin: 0, background: 'linear-gradient(135deg, #e2e8f0, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                                 Resource Forecast
                             </h1>
                             <p style={{ color: '#64748b', marginTop: 4, fontSize: 14 }}>
@@ -382,22 +363,11 @@
                             <div className="sync-indicator" style={{ marginTop: 8 }}>
                                 <Cloud size={14} />
                                 <div className="sync-dot"></div>
-                                <span>Synced with Google Sheets {lastSync && `• ${lastSync.toLocaleTimeString()}`}</span>
+                                <span>Synced with Google Sheets {lastSync && '• ' + lastSync.toLocaleTimeString()}</span>
                             </div>
                         </div>
                         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                            <button 
-                                onClick={() => fetchAssociates(false)} 
-                                style={{ 
-                                    background: 'rgba(99, 102, 241, 0.2)', 
-                                    border: 'none', 
-                                    padding: 10, 
-                                    borderRadius: 8, 
-                                    color: '#6366f1', 
-                                    cursor: 'pointer' 
-                                }}
-                                title="Refresh now"
-                            >
+                            <button onClick={() => fetchAssociates(false)} style={{ background: 'rgba(99, 102, 241, 0.2)', border: 'none', padding: 10, borderRadius: 8, color: '#6366f1', cursor: 'pointer' }} title="Refresh now">
                                 <RefreshCw size={18} />
                             </button>
                             <button className="btn-primary" onClick={() => setShowForm(true)} disabled={saving}>
@@ -407,38 +377,21 @@
                     </header>
 
                     {error && (
-                        <div style={{ 
-                            background: 'rgba(239, 68, 68, 0.2)', 
-                            border: '1px solid rgba(239, 68, 68, 0.3)',
-                            borderRadius: 8, 
-                            padding: 16, 
-                            marginBottom: 24,
-                            color: '#fca5a5'
-                        }}>
+                        <div style={{ background: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: 8, padding: 16, marginBottom: 24, color: '#fca5a5' }}>
                             {error}
                         </div>
                     )}
 
-                    {/* Summary Cards */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 20, marginBottom: 32 }}>
                         {statCards.map((stat, i) => (
                             <div key={i} className="card stat-card" style={{ padding: 24, '--accent-color': stat.color }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                     <div>
-                                        <p style={{ color: '#64748b', fontSize: 13, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                            {stat.label}
-                                        </p>
-                                        <p className="mono" style={{ fontSize: 28, fontWeight: 600, margin: 0, color: stat.color }}>
-                                            {stat.value}
-                                        </p>
+                                        <p style={{ color: '#64748b', fontSize: 13, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{stat.label}</p>
+                                        <p className="mono" style={{ fontSize: 28, fontWeight: 600, margin: 0, color: stat.color }}>{stat.value}</p>
                                         <p style={{ color: '#475569', fontSize: 12, marginTop: 4 }}>{stat.sub}</p>
                                     </div>
-                                    <div style={{
-                                        background: `${stat.color}20`,
-                                        padding: 10,
-                                        borderRadius: 12,
-                                        color: stat.color
-                                    }}>
+                                    <div style={{ background: stat.color + '20', padding: 10, borderRadius: 12, color: stat.color }}>
                                         <stat.icon size={22} />
                                     </div>
                                 </div>
@@ -446,13 +399,9 @@
                         ))}
                     </div>
 
-                    {/* Charts Row */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 20, marginBottom: 32 }}>
-                        {/* Cost & Margin Forecast Chart */}
                         <div className="card" style={{ padding: 24 }}>
-                            <h3 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 600, color: '#94a3b8' }}>
-                                Cost Forecast & Margin Analysis
-                            </h3>
+                            <h3 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 600, color: '#94a3b8' }}>Cost Forecast & Margin Analysis</h3>
                             <ResponsiveContainer width="100%" height={280}>
                                 <ComposedChart data={forecastData}>
                                     <defs>
@@ -467,17 +416,9 @@
                                     </defs>
                                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.1)" />
                                     <XAxis dataKey="month" stroke="#64748b" fontSize={12} />
-                                    <YAxis stroke="#64748b" fontSize={12} tickFormatter={v => `£${v / 1000}K`} />
-                                    <YAxis yAxisId="right" orientation="right" stroke="#64748b" fontSize={12} tickFormatter={v => `${v}%`} />
-                                    <Tooltip
-                                        contentStyle={{
-                                            background: 'rgba(15, 23, 42, 0.95)',
-                                            border: '1px solid rgba(148, 163, 184, 0.2)',
-                                            borderRadius: 8,
-                                            fontFamily: 'JetBrains Mono'
-                                        }}
-                                        formatter={(value) => [`£${value.toLocaleString()}`, '']}
-                                    />
+                                    <YAxis stroke="#64748b" fontSize={12} tickFormatter={v => '£' + v / 1000 + 'K'} />
+                                    <YAxis yAxisId="right" orientation="right" stroke="#64748b" fontSize={12} tickFormatter={v => v + '%'} />
+                                    <Tooltip contentStyle={{ background: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(148, 163, 184, 0.2)', borderRadius: 8, fontFamily: 'JetBrains Mono' }} formatter={(value) => ['£' + value.toLocaleString(), '']} />
                                     <Legend />
                                     <Area type="monotone" dataKey="cost" name="Cost" stroke="#f59e0b" fill="url(#costGradient)" strokeWidth={2} />
                                     <Area type="monotone" dataKey="margin" name="Margin" stroke="#10b981" fill="url(#marginGradient)" strokeWidth={2} />
@@ -486,44 +427,23 @@
                             </ResponsiveContainer>
                         </div>
 
-                        {/* Business Unit Breakdown */}
                         <div className="card" style={{ padding: 24 }}>
-                            <h3 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 600, color: '#94a3b8' }}>
-                                Margin by Business Unit
-                            </h3>
+                            <h3 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 600, color: '#94a3b8' }}>Margin by Business Unit</h3>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                                 {buSummary.length === 0 ? (
                                     <p style={{ color: '#64748b', fontSize: 14 }}>No data yet. Add associates to see breakdown.</p>
                                 ) : buSummary.map((bu, i) => (
                                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                        <div style={{
-                                            width: 10,
-                                            height: 10,
-                                            borderRadius: '50%',
-                                            background: BU_COLORS[bu.name] || '#6366f1'
-                                        }} />
+                                        <div style={{ width: 10, height: 10, borderRadius: '50%', background: BU_COLORS[bu.name] || '#6366f1' }} />
                                         <div style={{ flex: 1 }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                                                 <span style={{ fontSize: 13, fontWeight: 500 }}>{bu.name}</span>
                                                 <span className="mono" style={{ fontSize: 13, color: '#10b981' }}>{bu.marginPercent}%</span>
                                             </div>
-                                            <div style={{
-                                                height: 6,
-                                                background: 'rgba(148, 163, 184, 0.1)',
-                                                borderRadius: 3,
-                                                overflow: 'hidden'
-                                            }}>
-                                                <div style={{
-                                                    width: `${bu.marginPercent}%`,
-                                                    height: '100%',
-                                                    background: `linear-gradient(90deg, ${BU_COLORS[bu.name]}, ${BU_COLORS[bu.name]}80)`,
-                                                    borderRadius: 3,
-                                                    transition: 'width 0.5s ease'
-                                                }} />
+                                            <div style={{ height: 6, background: 'rgba(148, 163, 184, 0.1)', borderRadius: 3, overflow: 'hidden' }}>
+                                                <div style={{ width: bu.marginPercent + '%', height: '100%', background: 'linear-gradient(90deg, ' + BU_COLORS[bu.name] + ', ' + BU_COLORS[bu.name] + '80)', borderRadius: 3, transition: 'width 0.5s ease' }} />
                                             </div>
-                                            <p className="mono" style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
-                                                {formatCurrency(bu.margin)} margin • {formatCurrency(bu.cost)} cost
-                                            </p>
+                                            <p className="mono" style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>{formatCurrency(bu.margin)} margin • {formatCurrency(bu.cost)} cost</p>
                                         </div>
                                     </div>
                                 ))}
@@ -531,46 +451,30 @@
                         </div>
                     </div>
 
-                    {/* Associates Table */}
                     <div className="card" style={{ padding: 24 }}>
                         <h3 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 600, color: '#94a3b8' }}>
                             <Users size={18} style={{ display: 'inline', marginRight: 8, verticalAlign: 'middle' }} />
                             Associate Resources
                         </h3>
-
                         <div style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead>
                                     <tr style={{ borderBottom: '1px solid rgba(148, 163, 184, 0.2)' }}>
                                         {['Name', 'Business Unit', 'Start Date', 'End Date', 'Days', 'Per Diem', 'Cost Rate', 'Actions'].map(h => (
-                                            <th key={h} style={{
-                                                textAlign: 'left',
-                                                padding: '12px 16px',
-                                                fontSize: 11,
-                                                color: '#64748b',
-                                                textTransform: 'uppercase',
-                                                letterSpacing: '0.5px',
-                                                fontWeight: 600
-                                            }}>
-                                                {h}
-                                            </th>
+                                            <th key={h} style={{ textAlign: 'left', padding: '12px 16px', fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>{h}</th>
                                         ))}
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {associates.length === 0 ? (
                                         <tr>
-                                            <td colSpan="8" style={{ padding: 40, textAlign: 'center', color: '#64748b' }}>
-                                                No associates yet. Click "Add Associate" to get started.
-                                            </td>
+                                            <td colSpan="8" style={{ padding: 40, textAlign: 'center', color: '#64748b' }}>No associates yet. Click "Add Associate" to get started.</td>
                                         </tr>
                                     ) : associates.map(assoc => (
                                         <tr key={assoc.id} className="table-row" style={{ borderBottom: '1px solid rgba(148, 163, 184, 0.1)' }}>
                                             <td style={{ padding: '14px 16px', fontWeight: 500 }}>{assoc.name}</td>
                                             <td style={{ padding: '14px 16px' }}>
-                                                <span className="tag" style={{ background: `${BU_COLORS[assoc.businessUnit]}30`, color: BU_COLORS[assoc.businessUnit] }}>
-                                                    {assoc.businessUnit}
-                                                </span>
+                                                <span className="tag" style={{ background: (BU_COLORS[assoc.businessUnit] || '#6366f1') + '30', color: BU_COLORS[assoc.businessUnit] || '#6366f1' }}>{assoc.businessUnit}</span>
                                             </td>
                                             <td className="mono" style={{ padding: '14px 16px', fontSize: 13 }}>{assoc.startDate}</td>
                                             <td className="mono" style={{ padding: '14px 16px', fontSize: 13 }}>{assoc.endDate}</td>
@@ -579,38 +483,8 @@
                                             <td className="mono" style={{ padding: '14px 16px', fontSize: 13, color: '#f59e0b' }}>£{assoc.costRate}/day</td>
                                             <td style={{ padding: '14px 16px' }}>
                                                 <div style={{ display: 'flex', gap: 8 }}>
-                                                    <button
-                                                        onClick={() => handleEdit(assoc)}
-                                                        disabled={saving}
-                                                        style={{
-                                                            background: 'rgba(99, 102, 241, 0.2)',
-                                                            border: 'none',
-                                                            padding: '6px 12px',
-                                                            borderRadius: 6,
-                                                            color: '#6366f1',
-                                                            cursor: saving ? 'not-allowed' : 'pointer',
-                                                            fontSize: 12,
-                                                            fontWeight: 500,
-                                                            opacity: saving ? 0.6 : 1
-                                                        }}
-                                                    >
-                                                        Edit
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDelete(assoc.id)}
-                                                        disabled={saving}
-                                                        style={{
-                                                            background: 'rgba(239, 68, 68, 0.2)',
-                                                            border: 'none',
-                                                            padding: '6px',
-                                                            borderRadius: 6,
-                                                            color: '#ef4444',
-                                                            cursor: saving ? 'not-allowed' : 'pointer',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            opacity: saving ? 0.6 : 1
-                                                        }}
-                                                    >
+                                                    <button onClick={() => handleEdit(assoc)} disabled={saving} style={{ background: 'rgba(99, 102, 241, 0.2)', border: 'none', padding: '6px 12px', borderRadius: 6, color: '#6366f1', cursor: saving ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 500, opacity: saving ? 0.6 : 1 }}>Edit</button>
+                                                    <button onClick={() => handleDelete(assoc.id)} disabled={saving} style={{ background: 'rgba(239, 68, 68, 0.2)', border: 'none', padding: '6px', borderRadius: 6, color: '#ef4444', cursor: saving ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', opacity: saving ? 0.6 : 1 }}>
                                                         <Trash2 size={14} />
                                                     </button>
                                                 </div>
@@ -622,149 +496,53 @@
                         </div>
                     </div>
 
-                    {/* Modal Form */}
                     {showForm && (
-                        <div style={{
-                            position: 'fixed',
-                            inset: 0,
-                            background: 'rgba(0, 0, 0, 0.7)',
-                            backdropFilter: 'blur(4px)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            zIndex: 1000
-                        }} onClick={() => !saving && resetForm()}>
-                            <div
-                                className="card animate-in"
-                                style={{ padding: 32, width: 480, maxHeight: '90vh', overflowY: 'auto' }}
-                                onClick={e => e.stopPropagation()}
-                            >
+                        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => !saving && resetForm()}>
+                            <div className="card animate-in" style={{ padding: 32, width: 480, maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                                    <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>
-                                        {editingId ? 'Edit Associate' : 'Add New Associate'}
-                                    </h3>
-                                    <button
-                                        onClick={() => !saving && resetForm()}
-                                        style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: 4 }}
-                                    >
+                                    <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>{editingId ? 'Edit Associate' : 'Add New Associate'}</h3>
+                                    <button onClick={() => !saving && resetForm()} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: 4 }}>
                                         <X size={20} />
                                     </button>
                                 </div>
-
                                 <form onSubmit={handleSubmit}>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                                         <div>
-                                            <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                                Full Name
-                                            </label>
-                                            <input
-                                                className="input-field"
-                                                type="text"
-                                                value={formData.name}
-                                                onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                                placeholder="John Smith"
-                                                required
-                                            />
+                                            <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Full Name</label>
+                                            <input className="input-field" type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="John Smith" required />
                                         </div>
-
                                         <div>
-                                            <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                                Business Unit
-                                            </label>
-                                            <select
-                                                className="input-field"
-                                                value={formData.businessUnit}
-                                                onChange={e => setFormData({ ...formData, businessUnit: e.target.value })}
-                                                style={{ cursor: 'pointer' }}
-                                            >
-                                                {BUSINESS_UNITS.map(bu => (
-                                                    <option key={bu} value={bu}>{bu}</option>
-                                                ))}
+                                            <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Business Unit</label>
+                                            <select className="input-field" value={formData.businessUnit} onChange={e => setFormData({ ...formData, businessUnit: e.target.value })} style={{ cursor: 'pointer' }}>
+                                                {BUSINESS_UNITS.map(bu => (<option key={bu} value={bu}>{bu}</option>))}
                                             </select>
                                         </div>
-
                                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                                             <div>
-                                                <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                                    Start Date
-                                                </label>
-                                                <input
-                                                    className="input-field"
-                                                    type="date"
-                                                    value={formData.startDate}
-                                                    onChange={e => setFormData({ ...formData, startDate: e.target.value })}
-                                                    required
-                                                />
+                                                <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Start Date</label>
+                                                <input className="input-field" type="date" value={formData.startDate} onChange={e => setFormData({ ...formData, startDate: e.target.value })} required />
                                             </div>
                                             <div>
-                                                <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                                    End Date
-                                                </label>
-                                                <input
-                                                    className="input-field"
-                                                    type="date"
-                                                    value={formData.endDate}
-                                                    onChange={e => setFormData({ ...formData, endDate: e.target.value })}
-                                                    required
-                                                />
+                                                <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>End Date</label>
+                                                <input className="input-field" type="date" value={formData.endDate} onChange={e => setFormData({ ...formData, endDate: e.target.value })} required />
                                             </div>
                                         </div>
-
                                         <div>
-                                            <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                                Number of Days
-                                            </label>
-                                            <input
-                                                className="input-field"
-                                                type="number"
-                                                min="1"
-                                                value={formData.numberOfDays}
-                                                onChange={e => setFormData({ ...formData, numberOfDays: e.target.value })}
-                                                placeholder="100"
-                                                required
-                                            />
+                                            <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Number of Days</label>
+                                            <input className="input-field" type="number" min="1" value={formData.numberOfDays} onChange={e => setFormData({ ...formData, numberOfDays: e.target.value })} placeholder="100" required />
                                         </div>
-
                                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                                             <div>
-                                                <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                                    Per Diem (£/day)
-                                                </label>
-                                                <input
-                                                    className="input-field"
-                                                    type="number"
-                                                    min="0"
-                                                    value={formData.perDiem}
-                                                    onChange={e => setFormData({ ...formData, perDiem: e.target.value })}
-                                                    placeholder="250"
-                                                    required
-                                                />
+                                                <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Per Diem (£/day)</label>
+                                                <input className="input-field" type="number" min="0" value={formData.perDiem} onChange={e => setFormData({ ...formData, perDiem: e.target.value })} placeholder="250" required />
                                             </div>
                                             <div>
-                                                <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                                    Cost Rate (£/day)
-                                                </label>
-                                                <input
-                                                    className="input-field"
-                                                    type="number"
-                                                    min="0"
-                                                    value={formData.costRate}
-                                                    onChange={e => setFormData({ ...formData, costRate: e.target.value })}
-                                                    placeholder="125"
-                                                    required
-                                                />
+                                                <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Cost Rate (£/day)</label>
+                                                <input className="input-field" type="number" min="0" value={formData.costRate} onChange={e => setFormData({ ...formData, costRate: e.target.value })} placeholder="125" required />
                                             </div>
                                         </div>
-
                                         <button type="submit" className="btn-primary" style={{ marginTop: 8, justifyContent: 'center' }} disabled={saving}>
-                                            {saving ? (
-                                                <>
-                                                    <div className="loading-spinner"></div>
-                                                    Saving...
-                                                </>
-                                            ) : (
-                                                editingId ? 'Update Associate' : 'Add Associate'
-                                            )}
+                                            {saving ? (<><div className="loading-spinner"></div>Saving...</>) : (editingId ? 'Update Associate' : 'Add Associate')}
                                         </button>
                                     </div>
                                 </form>
@@ -778,5 +556,6 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
+    {% endraw %}
 </body>
 </html>
