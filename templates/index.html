@@ -7,7 +7,7 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/recharts@2.1.16/umd/Recharts.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -128,15 +128,6 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
-        .icon-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
     </style>
 </head>
 <body>
@@ -144,85 +135,132 @@
     
     {% raw %}
     <script type="text/babel">
-        const { useState, useMemo, useEffect, useCallback } = React;
-        const { ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } = window.Recharts;
+        const { useState, useMemo, useEffect, useCallback, useRef } = React;
 
-        // Simple SVG Icons as components
-        const PlusIcon = () => (
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-        );
-        const TrashIcon = () => (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-            </svg>
-        );
-        const RefreshIcon = () => (
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="23 4 23 10 17 10"></polyline>
-                <polyline points="1 20 1 14 7 14"></polyline>
-                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-            </svg>
-        );
-        const XIcon = () => (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-        );
-        const CloudIcon = () => (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path>
-            </svg>
-        );
-        const TrendingUpIcon = () => (
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-                <polyline points="17 6 23 6 23 12"></polyline>
-            </svg>
-        );
-        const DollarIcon = () => (
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="12" y1="1" x2="12" y2="23"></line>
-                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-            </svg>
-        );
-        const PercentIcon = () => (
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="19" y1="5" x2="5" y2="19"></line>
-                <circle cx="6.5" cy="6.5" r="2.5"></circle>
-                <circle cx="17.5" cy="17.5" r="2.5"></circle>
-            </svg>
-        );
-        const UsersIcon = () => (
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                <circle cx="9" cy="7" r="4"></circle>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-            </svg>
-        );
+        // Simple SVG Icons
+        const PlusIcon = () => (<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>);
+        const TrashIcon = () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>);
+        const RefreshIcon = () => (<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>);
+        const XIcon = () => (<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>);
+        const CloudIcon = () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>);
+        const TrendingUpIcon = () => (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>);
+        const DollarIcon = () => (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>);
+        const PercentIcon = () => (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="19" y1="5" x2="5" y2="19"></line><circle cx="6.5" cy="6.5" r="2.5"></circle><circle cx="17.5" cy="17.5" r="2.5"></circle></svg>);
+        const UsersIcon = () => (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>);
 
         const BUSINESS_UNITS = ['DBU', 'SBU', 'TBU'];
         const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
         const CURRENT_YEAR = 2025;
         const POLL_INTERVAL = 3000;
 
-        const BU_COLORS = {
-            DBU: '#10b981',
-            SBU: '#6366f1',
-            TBU: '#f59e0b'
-        };
+        const BU_COLORS = { DBU: '#10b981', SBU: '#6366f1', TBU: '#f59e0b' };
+        const STAT_ICONS = { revenue: TrendingUpIcon, cost: DollarIcon, margin: PercentIcon, associates: UsersIcon };
 
-        const STAT_ICONS = {
-            revenue: TrendingUpIcon,
-            cost: DollarIcon,
-            margin: PercentIcon,
-            associates: UsersIcon
-        };
+        // Chart Component using Chart.js
+        function ForecastChart({ data }) {
+            const chartRef = useRef(null);
+            const chartInstance = useRef(null);
+
+            useEffect(() => {
+                if (chartInstance.current) {
+                    chartInstance.current.destroy();
+                }
+
+                const ctx = chartRef.current.getContext('2d');
+                chartInstance.current = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.map(d => d.month),
+                        datasets: [
+                            {
+                                label: 'Cost',
+                                data: data.map(d => d.cost),
+                                backgroundColor: 'rgba(245, 158, 11, 0.5)',
+                                borderColor: '#f59e0b',
+                                borderWidth: 2,
+                                borderRadius: 4,
+                                order: 2
+                            },
+                            {
+                                label: 'Margin',
+                                data: data.map(d => d.margin),
+                                backgroundColor: 'rgba(16, 185, 129, 0.5)',
+                                borderColor: '#10b981',
+                                borderWidth: 2,
+                                borderRadius: 4,
+                                order: 1
+                            },
+                            {
+                                label: 'Margin %',
+                                data: data.map(d => d.marginPercent),
+                                type: 'line',
+                                borderColor: '#6366f1',
+                                backgroundColor: '#6366f1',
+                                borderWidth: 3,
+                                pointRadius: 5,
+                                pointBackgroundColor: '#6366f1',
+                                yAxisID: 'y1',
+                                order: 0
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { intersect: false, mode: 'index' },
+                        plugins: {
+                            legend: {
+                                labels: { color: '#94a3b8', font: { family: 'DM Sans' } }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                                titleColor: '#e2e8f0',
+                                bodyColor: '#e2e8f0',
+                                borderColor: 'rgba(148, 163, 184, 0.2)',
+                                borderWidth: 1,
+                                callbacks: {
+                                    label: function(context) {
+                                        if (context.dataset.label === 'Margin %') {
+                                            return context.dataset.label + ': ' + context.raw + '%';
+                                        }
+                                        return context.dataset.label + ': £' + context.raw.toLocaleString();
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                ticks: { color: '#64748b' },
+                                grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                            },
+                            y: {
+                                ticks: { 
+                                    color: '#64748b',
+                                    callback: function(value) { return '£' + value / 1000 + 'K'; }
+                                },
+                                grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                            },
+                            y1: {
+                                position: 'right',
+                                ticks: { 
+                                    color: '#64748b',
+                                    callback: function(value) { return value + '%'; }
+                                },
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+
+                return () => {
+                    if (chartInstance.current) {
+                        chartInstance.current.destroy();
+                    }
+                };
+            }, [data]);
+
+            return <canvas ref={chartRef}></canvas>;
+        }
 
         function App() {
             const [associates, setAssociates] = useState([]);
@@ -256,9 +294,7 @@
 
             useEffect(() => {
                 fetchAssociates(true);
-                const interval = setInterval(() => {
-                    fetchAssociates(false);
-                }, POLL_INTERVAL);
+                const interval = setInterval(() => fetchAssociates(false), POLL_INTERVAL);
                 return () => clearInterval(interval);
             }, [fetchAssociates]);
 
@@ -272,24 +308,17 @@
                 e.preventDefault();
                 setSaving(true);
                 try {
-                    if (editingId) {
-                        await fetch('/api/associates/' + editingId, {
-                            method: 'PUT',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(formData)
-                        });
-                    } else {
-                        await fetch('/api/associates', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(formData)
-                        });
-                    }
+                    const url = editingId ? '/api/associates/' + editingId : '/api/associates';
+                    const method = editingId ? 'PUT' : 'POST';
+                    await fetch(url, {
+                        method,
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(formData)
+                    });
                     await fetchAssociates(false);
                     resetForm();
                 } catch (err) {
                     setError('Failed to save');
-                    console.error(err);
                 } finally {
                     setSaving(false);
                 }
@@ -317,7 +346,6 @@
                     await fetchAssociates(false);
                 } catch (err) {
                     setError('Failed to delete');
-                    console.error(err);
                 } finally {
                     setSaving(false);
                 }
@@ -329,8 +357,7 @@
                     const monthStart = new Date(CURRENT_YEAR, monthNum - 1, 1);
                     const monthEnd = new Date(CURRENT_YEAR, monthNum, 0);
 
-                    let totalRevenue = 0;
-                    let totalCost = 0;
+                    let totalRevenue = 0, totalCost = 0;
                     const buBreakdown = {};
 
                     associates.forEach(assoc => {
@@ -342,9 +369,7 @@
                             for (let m = 1; m <= 6; m++) {
                                 const mStart = new Date(CURRENT_YEAR, m - 1, 1);
                                 const mEnd = new Date(CURRENT_YEAR, m, 0);
-                                if (start <= mEnd && end >= mStart) {
-                                    activeMonths++;
-                                }
+                                if (start <= mEnd && end >= mStart) activeMonths++;
                             }
 
                             const daysThisMonth = activeMonths > 0 ? Number(assoc.numberOfDays) / activeMonths : 0;
@@ -386,17 +411,14 @@
                 const summary = {};
                 forecastData.forEach(month => {
                     Object.entries(month.buBreakdown).forEach(([bu, data]) => {
-                        if (!summary[bu]) {
-                            summary[bu] = { revenue: 0, cost: 0, margin: 0 };
-                        }
+                        if (!summary[bu]) summary[bu] = { revenue: 0, cost: 0, margin: 0 };
                         summary[bu].revenue += data.revenue;
                         summary[bu].cost += data.cost;
                         summary[bu].margin += (data.revenue - data.cost);
                     });
                 });
                 return Object.entries(summary).map(([bu, data]) => ({
-                    name: bu,
-                    ...data,
+                    name: bu, ...data,
                     marginPercent: data.revenue > 0 ? Math.round((data.margin / data.revenue) * 100) : 0
                 }));
             }, [forecastData]);
@@ -427,12 +449,8 @@
                 <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
                     <header style={{ marginBottom: 32, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
                         <div>
-                            <h1 style={{ fontSize: 32, fontWeight: 700, margin: 0, background: 'linear-gradient(135deg, #e2e8f0, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                                Resource Forecast
-                            </h1>
-                            <p style={{ color: '#64748b', marginTop: 4, fontSize: 14 }}>
-                                Finance & Resourcing Planning • 6-Month Rolling Forecast
-                            </p>
+                            <h1 style={{ fontSize: 32, fontWeight: 700, margin: 0, background: 'linear-gradient(135deg, #e2e8f0, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Resource Forecast</h1>
+                            <p style={{ color: '#64748b', marginTop: 4, fontSize: 14 }}>Finance & Resourcing Planning • 6-Month Rolling Forecast</p>
                             <div className="sync-indicator" style={{ marginTop: 8 }}>
                                 <CloudIcon />
                                 <div className="sync-dot"></div>
@@ -450,9 +468,7 @@
                     </header>
 
                     {error && (
-                        <div style={{ background: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: 8, padding: 16, marginBottom: 24, color: '#fca5a5' }}>
-                            {error}
-                        </div>
+                        <div style={{ background: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: 8, padding: 16, marginBottom: 24, color: '#fca5a5' }}>{error}</div>
                     )}
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 20, marginBottom: 32 }}>
@@ -466,9 +482,7 @@
                                             <p className="mono" style={{ fontSize: 28, fontWeight: 600, margin: 0, color: stat.color }}>{stat.value}</p>
                                             <p style={{ color: '#475569', fontSize: 12, marginTop: 4 }}>{stat.sub}</p>
                                         </div>
-                                        <div style={{ background: stat.color + '20', padding: 10, borderRadius: 12, color: stat.color }}>
-                                            <IconComponent />
-                                        </div>
+                                        <div style={{ background: stat.color + '20', padding: 10, borderRadius: 12, color: stat.color }}><IconComponent /></div>
                                     </div>
                                 </div>
                             );
@@ -478,29 +492,9 @@
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 20, marginBottom: 32 }}>
                         <div className="card" style={{ padding: 24 }}>
                             <h3 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 600, color: '#94a3b8' }}>Cost Forecast & Margin Analysis</h3>
-                            <ResponsiveContainer width="100%" height={280}>
-                                <ComposedChart data={forecastData}>
-                                    <defs>
-                                        <linearGradient id="costGradient" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
-                                            <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
-                                        </linearGradient>
-                                        <linearGradient id="marginGradient" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                                            <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.1)" />
-                                    <XAxis dataKey="month" stroke="#64748b" fontSize={12} />
-                                    <YAxis stroke="#64748b" fontSize={12} tickFormatter={v => '£' + v / 1000 + 'K'} />
-                                    <YAxis yAxisId="right" orientation="right" stroke="#64748b" fontSize={12} tickFormatter={v => v + '%'} />
-                                    <Tooltip contentStyle={{ background: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(148, 163, 184, 0.2)', borderRadius: 8, fontFamily: 'JetBrains Mono' }} formatter={(value) => ['£' + value.toLocaleString(), '']} />
-                                    <Legend />
-                                    <Area type="monotone" dataKey="cost" name="Cost" stroke="#f59e0b" fill="url(#costGradient)" strokeWidth={2} />
-                                    <Area type="monotone" dataKey="margin" name="Margin" stroke="#10b981" fill="url(#marginGradient)" strokeWidth={2} />
-                                    <Line type="monotone" dataKey="marginPercent" name="Margin %" yAxisId="right" stroke="#6366f1" strokeWidth={2} dot={{ fill: '#6366f1', r: 4 }} />
-                                </ComposedChart>
-                            </ResponsiveContainer>
+                            <div style={{ height: 280 }}>
+                                <ForecastChart data={forecastData} />
+                            </div>
                         </div>
 
                         <div className="card" style={{ padding: 24 }}>
@@ -528,11 +522,8 @@
                     </div>
 
                     <div className="card" style={{ padding: 24 }}>
-                        <h3 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 600, color: '#94a3b8' }}>
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                                <UsersIcon />
-                                Associate Resources
-                            </span>
+                        <h3 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 600, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <UsersIcon /> Associate Resources
                         </h3>
                         <div style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -545,15 +536,11 @@
                                 </thead>
                                 <tbody>
                                     {associates.length === 0 ? (
-                                        <tr>
-                                            <td colSpan="8" style={{ padding: 40, textAlign: 'center', color: '#64748b' }}>No associates yet. Click "Add Associate" to get started.</td>
-                                        </tr>
+                                        <tr><td colSpan="8" style={{ padding: 40, textAlign: 'center', color: '#64748b' }}>No associates yet. Click "Add Associate" to get started.</td></tr>
                                     ) : associates.map(assoc => (
                                         <tr key={assoc.id} className="table-row" style={{ borderBottom: '1px solid rgba(148, 163, 184, 0.1)' }}>
                                             <td style={{ padding: '14px 16px', fontWeight: 500 }}>{assoc.name}</td>
-                                            <td style={{ padding: '14px 16px' }}>
-                                                <span className="tag" style={{ background: (BU_COLORS[assoc.businessUnit] || '#6366f1') + '30', color: BU_COLORS[assoc.businessUnit] || '#6366f1' }}>{assoc.businessUnit}</span>
-                                            </td>
+                                            <td style={{ padding: '14px 16px' }}><span className="tag" style={{ background: (BU_COLORS[assoc.businessUnit] || '#6366f1') + '30', color: BU_COLORS[assoc.businessUnit] || '#6366f1' }}>{assoc.businessUnit}</span></td>
                                             <td className="mono" style={{ padding: '14px 16px', fontSize: 13 }}>{assoc.startDate}</td>
                                             <td className="mono" style={{ padding: '14px 16px', fontSize: 13 }}>{assoc.endDate}</td>
                                             <td className="mono" style={{ padding: '14px 16px', fontSize: 13 }}>{assoc.numberOfDays}</td>
@@ -562,9 +549,7 @@
                                             <td style={{ padding: '14px 16px' }}>
                                                 <div style={{ display: 'flex', gap: 8 }}>
                                                     <button onClick={() => handleEdit(assoc)} disabled={saving} style={{ background: 'rgba(99, 102, 241, 0.2)', border: 'none', padding: '6px 12px', borderRadius: 6, color: '#6366f1', cursor: saving ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 500, opacity: saving ? 0.6 : 1 }}>Edit</button>
-                                                    <button onClick={() => handleDelete(assoc.id)} disabled={saving} style={{ background: 'rgba(239, 68, 68, 0.2)', border: 'none', padding: '6px', borderRadius: 6, color: '#ef4444', cursor: saving ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', opacity: saving ? 0.6 : 1 }}>
-                                                        <TrashIcon />
-                                                    </button>
+                                                    <button onClick={() => handleDelete(assoc.id)} disabled={saving} style={{ background: 'rgba(239, 68, 68, 0.2)', border: 'none', padding: '6px', borderRadius: 6, color: '#ef4444', cursor: saving ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', opacity: saving ? 0.6 : 1 }}><TrashIcon /></button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -579,9 +564,7 @@
                             <div className="card animate-in" style={{ padding: 32, width: 480, maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
                                     <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>{editingId ? 'Edit Associate' : 'Add New Associate'}</h3>
-                                    <button onClick={() => !saving && resetForm()} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: 4 }}>
-                                        <XIcon />
-                                    </button>
+                                    <button onClick={() => !saving && resetForm()} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: 4 }}><XIcon /></button>
                                 </div>
                                 <form onSubmit={handleSubmit}>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
