@@ -4,11 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resource Forecast | Finance & Resourcing</title>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/recharts@2.10.3/umd/Recharts.js"></script>
-    <script src="https://unpkg.com/lucide-react@0.263.1/dist/umd/lucide-react.js"></script>
+    <script src="https://unpkg.com/recharts@2.1.16/umd/Recharts.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -129,6 +128,15 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+        .icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 </head>
 <body>
@@ -137,8 +145,66 @@
     {% raw %}
     <script type="text/babel">
         const { useState, useMemo, useEffect, useCallback } = React;
-        const { ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } = Recharts;
-        const { Plus, Trash2, TrendingUp, DollarSign, Users, Percent, X, RefreshCw, Cloud } = lucideReact;
+        const { ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } = window.Recharts;
+
+        // Simple SVG Icons as components
+        const PlusIcon = () => (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+        );
+        const TrashIcon = () => (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+        );
+        const RefreshIcon = () => (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+        );
+        const XIcon = () => (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        );
+        const CloudIcon = () => (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path>
+            </svg>
+        );
+        const TrendingUpIcon = () => (
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                <polyline points="17 6 23 6 23 12"></polyline>
+            </svg>
+        );
+        const DollarIcon = () => (
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="1" x2="12" y2="23"></line>
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+            </svg>
+        );
+        const PercentIcon = () => (
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="19" y1="5" x2="5" y2="19"></line>
+                <circle cx="6.5" cy="6.5" r="2.5"></circle>
+                <circle cx="17.5" cy="17.5" r="2.5"></circle>
+            </svg>
+        );
+        const UsersIcon = () => (
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+        );
 
         const BUSINESS_UNITS = ['DBU', 'SBU', 'TBU'];
         const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
@@ -149,6 +215,13 @@
             DBU: '#10b981',
             SBU: '#6366f1',
             TBU: '#f59e0b'
+        };
+
+        const STAT_ICONS = {
+            revenue: TrendingUpIcon,
+            cost: DollarIcon,
+            margin: PercentIcon,
+            associates: UsersIcon
         };
 
         function App() {
@@ -335,10 +408,10 @@
             };
 
             const statCards = [
-                { label: 'Total Revenue', value: formatCurrency(totals.totalRevenue), icon: TrendingUp, color: '#10b981', sub: '6-month forecast' },
-                { label: 'Total Cost', value: formatCurrency(totals.totalCost), icon: DollarSign, color: '#f59e0b', sub: 'Labour costs' },
-                { label: 'Gross Margin', value: formatCurrency(totals.totalMargin), icon: Percent, color: '#6366f1', sub: totals.avgMarginPercent + '% margin' },
-                { label: 'Active Associates', value: associates.length, icon: Users, color: '#ec4899', sub: 'Current headcount' },
+                { label: 'Total Revenue', value: formatCurrency(totals.totalRevenue), icon: 'revenue', color: '#10b981', sub: '6-month forecast' },
+                { label: 'Total Cost', value: formatCurrency(totals.totalCost), icon: 'cost', color: '#f59e0b', sub: 'Labour costs' },
+                { label: 'Gross Margin', value: formatCurrency(totals.totalMargin), icon: 'margin', color: '#6366f1', sub: totals.avgMarginPercent + '% margin' },
+                { label: 'Active Associates', value: associates.length, icon: 'associates', color: '#ec4899', sub: 'Current headcount' },
             ];
 
             if (loading) {
@@ -361,17 +434,17 @@
                                 Finance & Resourcing Planning • 6-Month Rolling Forecast
                             </p>
                             <div className="sync-indicator" style={{ marginTop: 8 }}>
-                                <Cloud size={14} />
+                                <CloudIcon />
                                 <div className="sync-dot"></div>
                                 <span>Synced with Google Sheets {lastSync && '• ' + lastSync.toLocaleTimeString()}</span>
                             </div>
                         </div>
                         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                             <button onClick={() => fetchAssociates(false)} style={{ background: 'rgba(99, 102, 241, 0.2)', border: 'none', padding: 10, borderRadius: 8, color: '#6366f1', cursor: 'pointer' }} title="Refresh now">
-                                <RefreshCw size={18} />
+                                <RefreshIcon />
                             </button>
                             <button className="btn-primary" onClick={() => setShowForm(true)} disabled={saving}>
-                                <Plus size={18} /> Add Associate
+                                <PlusIcon /> Add Associate
                             </button>
                         </div>
                     </header>
@@ -383,20 +456,23 @@
                     )}
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 20, marginBottom: 32 }}>
-                        {statCards.map((stat, i) => (
-                            <div key={i} className="card stat-card" style={{ padding: 24, '--accent-color': stat.color }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                    <div>
-                                        <p style={{ color: '#64748b', fontSize: 13, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{stat.label}</p>
-                                        <p className="mono" style={{ fontSize: 28, fontWeight: 600, margin: 0, color: stat.color }}>{stat.value}</p>
-                                        <p style={{ color: '#475569', fontSize: 12, marginTop: 4 }}>{stat.sub}</p>
-                                    </div>
-                                    <div style={{ background: stat.color + '20', padding: 10, borderRadius: 12, color: stat.color }}>
-                                        <stat.icon size={22} />
+                        {statCards.map((stat, i) => {
+                            const IconComponent = STAT_ICONS[stat.icon];
+                            return (
+                                <div key={i} className="card stat-card" style={{ padding: 24, '--accent-color': stat.color }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                        <div>
+                                            <p style={{ color: '#64748b', fontSize: 13, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{stat.label}</p>
+                                            <p className="mono" style={{ fontSize: 28, fontWeight: 600, margin: 0, color: stat.color }}>{stat.value}</p>
+                                            <p style={{ color: '#475569', fontSize: 12, marginTop: 4 }}>{stat.sub}</p>
+                                        </div>
+                                        <div style={{ background: stat.color + '20', padding: 10, borderRadius: 12, color: stat.color }}>
+                                            <IconComponent />
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 20, marginBottom: 32 }}>
@@ -453,8 +529,10 @@
 
                     <div className="card" style={{ padding: 24 }}>
                         <h3 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 600, color: '#94a3b8' }}>
-                            <Users size={18} style={{ display: 'inline', marginRight: 8, verticalAlign: 'middle' }} />
-                            Associate Resources
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                                <UsersIcon />
+                                Associate Resources
+                            </span>
                         </h3>
                         <div style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -485,7 +563,7 @@
                                                 <div style={{ display: 'flex', gap: 8 }}>
                                                     <button onClick={() => handleEdit(assoc)} disabled={saving} style={{ background: 'rgba(99, 102, 241, 0.2)', border: 'none', padding: '6px 12px', borderRadius: 6, color: '#6366f1', cursor: saving ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 500, opacity: saving ? 0.6 : 1 }}>Edit</button>
                                                     <button onClick={() => handleDelete(assoc.id)} disabled={saving} style={{ background: 'rgba(239, 68, 68, 0.2)', border: 'none', padding: '6px', borderRadius: 6, color: '#ef4444', cursor: saving ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', opacity: saving ? 0.6 : 1 }}>
-                                                        <Trash2 size={14} />
+                                                        <TrashIcon />
                                                     </button>
                                                 </div>
                                             </td>
@@ -502,7 +580,7 @@
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
                                     <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>{editingId ? 'Edit Associate' : 'Add New Associate'}</h3>
                                     <button onClick={() => !saving && resetForm()} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: 4 }}>
-                                        <X size={20} />
+                                        <XIcon />
                                     </button>
                                 </div>
                                 <form onSubmit={handleSubmit}>
