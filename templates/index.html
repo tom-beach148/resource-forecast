@@ -173,16 +173,23 @@
         const BU_COLORS = { DBU: '#10b981', SBU: '#6366f1', TBU: '#f59e0b' };
         const STAT_ICONS = { revenue: TrendingUpIcon, cost: DollarIcon, margin: PercentIcon, associates: UsersIcon };
 
-        // Chart Component using Chart.js
+        // Chart Component using Chart.js - updates smoothly without resetting
         function ForecastChart({ data }) {
             const chartRef = useRef(null);
             const chartInstance = useRef(null);
 
             useEffect(() => {
+                // If chart already exists, just update the data
                 if (chartInstance.current) {
-                    chartInstance.current.destroy();
+                    chartInstance.current.data.labels = data.map(d => d.month);
+                    chartInstance.current.data.datasets[0].data = data.map(d => d.cost);
+                    chartInstance.current.data.datasets[1].data = data.map(d => d.margin);
+                    chartInstance.current.data.datasets[2].data = data.map(d => d.marginPercent);
+                    chartInstance.current.update('none'); // 'none' disables animation on update
+                    return;
                 }
 
+                // Create chart for the first time
                 const ctx = chartRef.current.getContext('2d');
                 chartInstance.current = new Chart(ctx, {
                     type: 'bar',
@@ -224,6 +231,9 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        animation: {
+                            duration: 500 // Only animate on first load
+                        },
                         interaction: { intersect: false, mode: 'index' },
                         plugins: {
                             legend: {
@@ -272,6 +282,7 @@
                 return () => {
                     if (chartInstance.current) {
                         chartInstance.current.destroy();
+                        chartInstance.current = null;
                     }
                 };
             }, [data]);
