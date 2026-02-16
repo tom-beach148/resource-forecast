@@ -150,8 +150,25 @@
 
         const BUSINESS_UNITS = ['DBU', 'SBU', 'TBU'];
         const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-        const CURRENT_YEAR = 2025;
+        const CURRENT_YEAR = 2026;
         const POLL_INTERVAL = 3000;
+
+        // Helper function to parse dates in multiple formats
+        function parseDate(dateStr) {
+            if (!dateStr) return null;
+            // Try YYYY-MM-DD format first
+            if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                return new Date(dateStr);
+            }
+            // Try DD/MM/YYYY format
+            if (dateStr.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+                const [day, month, year] = dateStr.split('/');
+                return new Date(year, month - 1, day);
+            }
+            // Try to parse anyway
+            const d = new Date(dateStr);
+            return isNaN(d.getTime()) ? null : d;
+        }
 
         const BU_COLORS = { DBU: '#10b981', SBU: '#6366f1', TBU: '#f59e0b' };
         const STAT_ICONS = { revenue: TrendingUpIcon, cost: DollarIcon, margin: PercentIcon, associates: UsersIcon };
@@ -361,8 +378,10 @@
                     const buBreakdown = {};
 
                     associates.forEach(assoc => {
-                        const start = new Date(assoc.startDate);
-                        const end = new Date(assoc.endDate);
+                        const start = parseDate(assoc.startDate);
+                        const end = parseDate(assoc.endDate);
+
+                        if (!start || !end) return; // Skip invalid dates
 
                         if (start <= monthEnd && end >= monthStart) {
                             let activeMonths = 0;
