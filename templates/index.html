@@ -173,32 +173,24 @@
         const BU_COLORS = { DBU: '#10b981', SBU: '#6366f1', TBU: '#f59e0b' };
         const STAT_ICONS = { revenue: TrendingUpIcon, cost: DollarIcon, margin: PercentIcon, associates: UsersIcon };
 
-        // Chart Component using Chart.js - updates smoothly without resetting
+        // Chart Component using Chart.js - creates once, updates smoothly
         function ForecastChart({ data }) {
             const chartRef = useRef(null);
             const chartInstance = useRef(null);
 
+            // Create chart only once on mount
             useEffect(() => {
-                // If chart already exists, just update the data
-                if (chartInstance.current) {
-                    chartInstance.current.data.labels = data.map(d => d.month);
-                    chartInstance.current.data.datasets[0].data = data.map(d => d.cost);
-                    chartInstance.current.data.datasets[1].data = data.map(d => d.margin);
-                    chartInstance.current.data.datasets[2].data = data.map(d => d.marginPercent);
-                    chartInstance.current.update('none'); // 'none' disables animation on update
-                    return;
-                }
-
-                // Create chart for the first time
+                if (!chartRef.current) return;
+                
                 const ctx = chartRef.current.getContext('2d');
                 chartInstance.current = new Chart(ctx, {
                     type: 'bar',
                     data: {
-                        labels: data.map(d => d.month),
+                        labels: [],
                         datasets: [
                             {
                                 label: 'Cost',
-                                data: data.map(d => d.cost),
+                                data: [],
                                 backgroundColor: 'rgba(245, 158, 11, 0.5)',
                                 borderColor: '#f59e0b',
                                 borderWidth: 2,
@@ -207,7 +199,7 @@
                             },
                             {
                                 label: 'Margin',
-                                data: data.map(d => d.margin),
+                                data: [],
                                 backgroundColor: 'rgba(16, 185, 129, 0.5)',
                                 borderColor: '#10b981',
                                 borderWidth: 2,
@@ -216,7 +208,7 @@
                             },
                             {
                                 label: 'Margin %',
-                                data: data.map(d => d.marginPercent),
+                                data: [],
                                 type: 'line',
                                 borderColor: '#6366f1',
                                 backgroundColor: '#6366f1',
@@ -231,9 +223,7 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        animation: {
-                            duration: 500 // Only animate on first load
-                        },
+                        animation: false,
                         interaction: { intersect: false, mode: 'index' },
                         plugins: {
                             legend: {
@@ -285,6 +275,17 @@
                         chartInstance.current = null;
                     }
                 };
+            }, []); // Empty dependency - only run once
+
+            // Update data whenever it changes
+            useEffect(() => {
+                if (!chartInstance.current) return;
+                
+                chartInstance.current.data.labels = data.map(d => d.month);
+                chartInstance.current.data.datasets[0].data = data.map(d => d.cost);
+                chartInstance.current.data.datasets[1].data = data.map(d => d.margin);
+                chartInstance.current.data.datasets[2].data = data.map(d => d.marginPercent);
+                chartInstance.current.update('none');
             }, [data]);
 
             return <canvas ref={chartRef}></canvas>;
