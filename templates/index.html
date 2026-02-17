@@ -149,9 +149,28 @@
         const UsersIcon = () => (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>);
 
         const BUSINESS_UNITS = ['DBU', 'SBU', 'TBU'];
-        const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-        const CURRENT_YEAR = 2026;
         const POLL_INTERVAL = 60000; // 60 seconds
+
+        // Generate rolling 12 months from current month
+        function getRollingMonths() {
+            const months = [];
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const now = new Date();
+            
+            for (let i = 0; i < 12; i++) {
+                const date = new Date(now.getFullYear(), now.getMonth() + i, 1);
+                const monthName = monthNames[date.getMonth()];
+                const year = date.getFullYear().toString().slice(-2); // Get last 2 digits
+                months.push({
+                    label: monthName + ' ' + year,
+                    month: date.getMonth(),
+                    year: date.getFullYear()
+                });
+            }
+            return months;
+        }
+        
+        const ROLLING_MONTHS = getRollingMonths();
 
         // Helper function to parse dates in multiple formats
         function parseDate(dateStr) {
@@ -247,7 +266,11 @@
                         },
                         scales: {
                             x: {
-                                ticks: { color: '#64748b' },
+                                ticks: { 
+                                    color: '#64748b',
+                                    maxRotation: 45,
+                                    minRotation: 45
+                                },
                                 grid: { color: 'rgba(148, 163, 184, 0.1)' }
                             },
                             y: {
@@ -403,10 +426,9 @@
             };
 
             const forecastData = useMemo(() => {
-                return MONTHS.map((month, idx) => {
-                    const monthNum = idx + 1;
-                    const monthStart = new Date(CURRENT_YEAR, monthNum - 1, 1);
-                    const monthEnd = new Date(CURRENT_YEAR, monthNum, 0);
+                return ROLLING_MONTHS.map((monthData) => {
+                    const monthStart = new Date(monthData.year, monthData.month, 1);
+                    const monthEnd = new Date(monthData.year, monthData.month + 1, 0);
 
                     let totalRevenue = 0, totalCost = 0;
                     const buBreakdown = {};
@@ -418,12 +440,13 @@
                         if (!start || !end) return; // Skip invalid dates
 
                         if (start <= monthEnd && end >= monthStart) {
+                            // Count how many of the 12 months this associate is active
                             let activeMonths = 0;
-                            for (let m = 1; m <= 6; m++) {
-                                const mStart = new Date(CURRENT_YEAR, m - 1, 1);
-                                const mEnd = new Date(CURRENT_YEAR, m, 0);
+                            ROLLING_MONTHS.forEach(m => {
+                                const mStart = new Date(m.year, m.month, 1);
+                                const mEnd = new Date(m.year, m.month + 1, 0);
                                 if (start <= mEnd && end >= mStart) activeMonths++;
-                            }
+                            });
 
                             const daysThisMonth = activeMonths > 0 ? Number(assoc.numberOfDays) / activeMonths : 0;
                             const revenue = daysThisMonth * Number(assoc.perDiem);
@@ -442,7 +465,7 @@
                     });
 
                     return {
-                        month,
+                        month: monthData.label,
                         revenue: Math.round(totalRevenue),
                         cost: Math.round(totalCost),
                         margin: Math.round(totalRevenue - totalCost),
@@ -483,7 +506,7 @@
             };
 
             const statCards = [
-                { label: 'Total Revenue', value: formatCurrency(totals.totalRevenue), icon: 'revenue', color: '#10b981', sub: '6-month forecast' },
+                { label: 'Total Revenue', value: formatCurrency(totals.totalRevenue), icon: 'revenue', color: '#10b981', sub: '12-month forecast' },
                 { label: 'Total Cost', value: formatCurrency(totals.totalCost), icon: 'cost', color: '#f59e0b', sub: 'Labour costs' },
                 { label: 'Gross Margin', value: formatCurrency(totals.totalMargin), icon: 'margin', color: '#6366f1', sub: totals.avgMarginPercent + '% margin' },
                 { label: 'Active Associates', value: associates.length, icon: 'associates', color: '#ec4899', sub: 'Current headcount' },
@@ -503,7 +526,7 @@
                     <header style={{ marginBottom: 32, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
                         <div>
                             <h1 style={{ fontSize: 32, fontWeight: 700, margin: 0, background: 'linear-gradient(135deg, #e2e8f0, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Resource Forecast</h1>
-                            <p style={{ color: '#64748b', marginTop: 4, fontSize: 14 }}>Finance & Resourcing Planning • 6-Month Rolling Forecast</p>
+                            <p style={{ color: '#64748b', marginTop: 4, fontSize: 14 }}>Finance & Resourcing Planning • 12-Month Rolling Forecast</p>
                             <div className="sync-indicator" style={{ marginTop: 8 }}>
                                 <CloudIcon />
                                 <div className="sync-dot" style={{ background: failCount > 0 ? '#f59e0b' : '#10b981' }}></div>
@@ -547,8 +570,8 @@
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 20, marginBottom: 32 }}>
                         <div className="card" style={{ padding: 24 }}>
-                            <h3 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 600, color: '#94a3b8' }}>Cost Forecast & Margin Analysis</h3>
-                            <div style={{ height: 280 }}>
+                            <h3 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 600, color: '#94a3b8' }}>12-Month Cost Forecast & Margin Analysis</h3>
+                            <div style={{ height: 320 }}>
                                 <ForecastChart data={forecastData} />
                             </div>
                         </div>
